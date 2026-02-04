@@ -5,52 +5,104 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rakuten Travel CSV Exporter</title>
   <style>
-    :root { --bg: #f6f7fb; --card: #ffffff; --text: #111827; --muted: #6b7280; --accent: #2563eb; }
-    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
-    .wrap { max-width: 860px; margin: 40px auto; padding: 0 16px; }
-    .card { background: var(--card); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); padding: 24px; }
-    h1 { margin: 0 0 12px; font-size: 22px; }
-    p { margin: 0 0 18px; color: var(--muted); }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-    input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
-    button { margin-top: 16px; background: var(--accent); color: white; border: none; padding: 12px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
-    .error { background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
-    .note { font-size: 12px; color: var(--muted); margin-top: 12px; }
-    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+    :root { --bg: #f6f7fb; --card: #ffffff; --text: #111827; --muted: #6b7280; --accent: #2563eb; --accent-hover: #1d4ed8; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .wrap { width: 100%; max-width: 600px; padding: 16px; }
+    .card { background: var(--card); border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); padding: 32px; }
+    h1 { margin: 0 0 12px; font-size: 24px; font-weight: 700; text-align: center; }
+    p.desc { margin: 0 0 24px; color: var(--muted); text-align: center; font-size: 14px; }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .full-width { grid-column: 1 / -1; }
+    
+    label { font-size: 13px; font-weight: 500; color: var(--text); display: block; margin-bottom: 8px; }
+    input { width: 100%; box-sizing: border-box; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; }
+    input:focus { outline: none; border-color: var(--accent); ring: 2px solid rgba(37,99,235,0.1); }
+    
+    button { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: var(--accent-hover); }
+    button:disabled { background: #9ca3af; cursor: not-allowed; }
+    
+    .status-area { margin-top: 20px; padding: 16px; background: #f0f9ff; border-radius: 8px; color: #0369a1; font-size: 14px; display: none; }
+    .status-area.error { background: #fef2f2; color: #991b1b; }
+    .status-area p { margin: 0; }
+    
+    .footer-note { font-size: 12px; color: var(--muted); text-align: center; margin-top: 24px; }
+    
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>楽天トラベル CSV 出力（公式API）</h1>
-      <p>キーワードで宿を検索し、CSVをダウンロードします。</p>
+      <h1>楽天トラベル CSV 出力</h1>
+      <p class="desc">キーワードで宿を検索し、詳細情報（最安料金・部屋数など）をCSVで一括ダウンロードします。</p>
+
       {% if error %}
-        <div class="error">{{ error }}</div>
+        <div class="status-area error" style="display: block;">
+            <strong>Error:</strong> {{ error }}
+        </div>
       {% endif %}
-      <form method="post">
+
+      <form id="downloadForm" method="post" action="/">
         <div class="grid">
-          <div>
-            <label for="keyword">キーワード</label>
-            <input id="keyword" name="keyword" value="貸し別荘" />
+          <div class="full-width">
+            <label for="keyword">検索キーワード</label>
+            <input id="keyword" name="keyword" value="貸し別荘" placeholder="例: 箱根 温泉" required />
           </div>
           <div>
-            <label for="hits">取得件数/ページ（最大30）</label>
-            <input id="hits" name="hits" value="30" />
+            <label for="hits">一覧取得数 (最大30/ページ)</label>
+            <input type="number" id="hits" name="hits" value="30" min="1" max="30" />
           </div>
           <div>
-            <label for="max_pages">最大ページ数（最大100）</label>
-            <input id="max_pages" name="max_pages" value="10" />
+            <label for="max_pages">最大ページ数</label>
+            <input type="number" id="max_pages" name="max_pages" value="5" min="1" max="100" />
           </div>
-          <div>
-            <label for="sleep">リクエスト間隔（秒）</label>
-            <input id="sleep" name="sleep" value="0.5" />
+          <div class="full-width">
+             <label for="sleep">リクエスト間隔 (秒)</label>
+             <input type="number" step="0.1" id="sleep" name="sleep" value="1.0" min="0.5" />
+             <div style="font-size: 11px; color: #9ca3af; margin-top: 4px;">※ API制限回避のため 1.0秒以上推奨</div>
           </div>
         </div>
-        <button type="submit">CSVをダウンロード</button>
+        <button type="submit" id="submitBtn">CSVをダウンロード</button>
       </form>
-      <div class="note">RAKUTEN_APP_ID が設定されていない場合は実行できません。</div>
+
+      <div id="status" class="status-area">
+        <p id="statusText">処理を開始します...</p>
+      </div>
+
+      <div class="footer-note">
+        {% if app_id %}
+            <span style="color: #16a34a;">● RAKUTEN_APP_ID 設定済み</span>
+        {% else %}
+            <span style="color: #ea580c;">● RAKUTEN_APP_ID が未設定です</span>
+        {% endif %}
+      </div>
     </div>
   </div>
+
+  <script>
+    const form = document.getElementById('downloadForm');
+    const statusDiv = document.getElementById('status');
+    const statusText = document.getElementById('statusText');
+    const btn = document.getElementById('submitBtn');
+
+    form.onsubmit = function() {
+        statusDiv.style.display = 'block';
+        statusDiv.classList.remove('error');
+        statusText.textContent = "リクエストを送信中... ダウンロード開始までしばらくお待ちください (最大数分かかる場合があります)";
+        btn.disabled = true;
+        btn.textContent = "処理中...";
+        
+        // Re-enable button after a short delay (or ideally after download starts, but difficult to detect with standard form post)
+        // With standard form submission, the page won't reload, but the file download will start.
+        // We can set a timeout to reset the UI if it takes too long or assume user downloaded it.
+        setTimeout(() => {
+             statusText.textContent = "ダウンロードが開始されたはずです。もし始まらない場合は設定を確認してください。";
+             btn.disabled = false;
+             btn.textContent = "CSVをダウンロード";
+        }, 5000);
+    };
+  </script>
 </body>
 </html>
