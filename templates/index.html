@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rakuten Travel CSV Exporter</title>
+  <style>
+    :root { --bg: #f6f7fb; --card: #ffffff; --text: #111827; --muted: #6b7280; --accent: #2563eb; }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+    .wrap { max-width: 860px; margin: 40px auto; padding: 0 16px; }
+    .card { background: var(--card); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); padding: 24px; }
+    h1 { margin: 0 0 12px; font-size: 22px; }
+    p { margin: 0 0 18px; color: var(--muted); }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; }
+    button { margin-top: 16px; background: var(--accent); color: white; border: none; padding: 12px 16px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .error { background: #fee2e2; color: #991b1b; padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; }
+    .note { font-size: 12px; color: var(--muted); margin-top: 12px; }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>楽天トラベル CSV 出力（公式API）</h1>
+      <p>キーワードで宿を検索し、CSVをダウンロードします。</p>
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+      <form method="post">
+        <div class="grid">
+          <div>
+            <label>キーワード</label>
+            <input name="keyword" value="貸し別荘" />
+          </div>
+          <div>
+            <label>取得件数/ページ（最大30）</label>
+            <input name="hits" value="30" />
+          </div>
+          <div>
+            <label>最大ページ数（最大100）</label>
+            <input name="max_pages" value="10" />
+          </div>
+          <div>
+            <label>リクエスト間隔（秒）</label>
+            <input name="sleep" value="0.5" />
+          </div>
+        </div>
+        <button type="submit">CSVをダウンロード</button>
+      </form>
+      <div class="note">RAKUTEN_APP_ID が設定されていない場合は実行できません。</div>
+    </div>
+  </div>
+</body>
+</html>
